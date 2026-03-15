@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type {
   SimulationStatus,
   SimulationConfig,
@@ -15,12 +16,27 @@ function getTimeOfDay(hour: number): TimeOfDay {
   return "night";
 }
 
+interface VehicleTypes {
+  car: boolean;
+  bus: boolean;
+  taxi: boolean;
+}
+
 interface SimulationState {
   status: SimulationStatus;
   config: SimulationConfig;
   time: SimulationTime;
   weather: WeatherState;
   tickCount: number;
+
+  // Weather settings
+  autoWeather: boolean;
+  weatherEffectsEnabled: boolean;
+
+  // Vehicle settings
+  maxVehicleCount: number;
+  vehicleTypes: VehicleTypes;
+  spawnRate: number;
 
   start: () => void;
   pause: () => void;
@@ -29,6 +45,14 @@ interface SimulationState {
   tick: () => void;
   setWeather: (weather: WeatherState) => void;
   advanceTime: (deltaMs: number) => void;
+
+  // New setters
+  setAutoWeather: (enabled: boolean) => void;
+  setWeatherEffectsEnabled: (enabled: boolean) => void;
+  setMaxVehicleCount: (count: number) => void;
+  setVehicleTypes: (types: VehicleTypes) => void;
+  setSpawnRate: (rate: number) => void;
+  setDayDuration: (ms: number) => void;
 }
 
 const DEFAULT_CONFIG: SimulationConfig = {
@@ -49,74 +73,124 @@ const DEFAULT_TIME: SimulationTime = {
   timeOfDay: "day",
 };
 
-export const useSimulationStore = create<SimulationState>()((set, get) => ({
-  status: "idle",
-  config: DEFAULT_CONFIG,
-  time: DEFAULT_TIME,
-  weather: "clear",
-  tickCount: 0,
-
-  start: (): void => {
-    set({ status: "running" });
-  },
-
-  pause: (): void => {
-    set({ status: "paused" });
-  },
-
-  reset: (): void => {
-    set({
+export const useSimulationStore = create<SimulationState>()(
+  persist(
+    (set, get) => ({
       status: "idle",
+      config: DEFAULT_CONFIG,
       time: DEFAULT_TIME,
       weather: "clear",
       tickCount: 0,
-    });
-  },
 
-  setSpeed: (speed: SpeedMultiplier): void => {
-    set((state) => ({
-      config: { ...state.config, speedMultiplier: speed },
-    }));
-  },
+      // Weather defaults
+      autoWeather: false,
+      weatherEffectsEnabled: true,
 
-  tick: (): void => {
-    const state = get();
-    if (state.status !== "running") return;
+      // Vehicle defaults
+      maxVehicleCount: 10,
+      vehicleTypes: { car: true, bus: true, taxi: true },
+      spawnRate: 5,
 
-    const deltaMs = state.config.tickInterval * state.config.speedMultiplier;
-    set((prev) => ({ tickCount: prev.tickCount + 1 }));
-    state.advanceTime(deltaMs);
-  },
+      start: (): void => {
+        set({ status: "running" });
+      },
 
-  setWeather: (weather: WeatherState): void => {
-    set({ weather });
-  },
+      pause: (): void => {
+        set({ status: "paused" });
+      },
 
-  advanceTime: (deltaMs: number): void => {
-    set((state) => {
-      const { dayDurationMs } = state.config;
-      const msPerSimMinute = dayDurationMs / 1440;
-      const simMinutesElapsed = deltaMs / msPerSimMinute;
+      reset: (): void => {
+        set({
+          status: "idle",
+          time: DEFAULT_TIME,
+          weather: "clear",
+          tickCount: 0,
+        });
+      },
 
-      let totalMinutes = state.time.hour * 60 + state.time.minute + simMinutesElapsed;
-      let day = state.time.day;
+      setSpeed: (speed: SpeedMultiplier): void => {
+        set((state) => ({
+          config: { ...state.config, speedMultiplier: speed },
+        }));
+      },
 
-      while (totalMinutes >= 1440) {
-        totalMinutes -= 1440;
-        day += 1;
-      }
+      tick: (): void => {
+        const state = get();
+        if (state.status !== "running") return;
 
-      const hour = Math.floor(totalMinutes / 60) % 24;
-      const minute = Math.floor(totalMinutes % 60);
+        const deltaMs = state.config.tickInterval * state.config.speedMultiplier;
+        set((prev) => ({ tickCount: prev.tickCount + 1 }));
+        state.advanceTime(deltaMs);
+      },
 
-      return {
-        time: {
-          hour,
-          minute,
-          day,
-          timeOfDay: getTimeOfDay(hour),
-        },
-      };
-    });
-  },
-}));
+      setWeather: (weather: WeatherState): void => {
+        set({ weather });
+      },
+
+      advanceTime: (deltaMs: number): void => {
+        set((state) => {
+          const { dayDurationMs } = state.config;
+          const msPerSimMinute = dayDurationMs / 1440;
+          const simMinutesElapsed = deltaMs / msPerSimMinute;
+
+          let totalMinutes = state.time.hour * 60 + state.time.minute + simMinutesElapsed;
+          let day = state.time.day;
+
+          while (totalMinutes >= 1440) {
+            totalMinutes -= 1440;
+            day += 1;
+          }
+
+          const hour = Math.floor(totalMinutes / 60) % 24;
+          const minute = Math.floor(totalMinutes % 60);
+
+          return {
+            time: {
+              hour,
+              minute,
+              day,
+              timeOfDay: getTimeOfDay(hour),
+            },
+          };
+        });
+      },
+
+      setAutoWeather: (enabled: boolean): void => {
+        set({ autoWeather: enabled });
+      },
+
+      setWeatherEffectsEnabled: (enabled: boolean): void => {
+        set({ weatherEffectsEnabled: enabled });
+      },
+
+      setMaxVehicleCount: (count: number): void => {
+        set({ maxVehicleCount: count });
+      },
+
+      setVehicleTypes: (types: VehicleTypes): void => {
+        set({ vehicleTypes: types });
+      },
+
+      setSpawnRate: (rate: number): void => {
+        set({ spawnRate: rate });
+      },
+
+      setDayDuration: (ms: number): void => {
+        set((state) => ({
+          config: { ...state.config, dayDurationMs: ms },
+        }));
+      },
+    }),
+    {
+      name: "mesasim-simulation",
+      partialize: (state) => ({
+        config: state.config,
+        autoWeather: state.autoWeather,
+        weatherEffectsEnabled: state.weatherEffectsEnabled,
+        maxVehicleCount: state.maxVehicleCount,
+        vehicleTypes: state.vehicleTypes,
+        spawnRate: state.spawnRate,
+      }),
+    }
+  )
+);

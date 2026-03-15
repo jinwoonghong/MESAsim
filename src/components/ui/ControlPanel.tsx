@@ -4,13 +4,28 @@ import { useUIStore } from "@/stores";
 import SimulationTab from "./SimulationTab";
 import AgentTab from "./AgentTab";
 import ApiSettingsTab from "./ApiSettingsTab";
+import CameraTab from "./CameraTab";
+import WeatherTab from "./WeatherTab";
+import VehicleTab from "./VehicleTab";
+import SystemTab from "./SystemTab";
 
-type TabId = "agents" | "city" | "settings";
+type TabId =
+  | "agents"
+  | "city"
+  | "camera"
+  | "weather"
+  | "vehicles"
+  | "settings"
+  | "system";
 
 const TABS: { id: TabId; label: string }[] = [
   { id: "agents", label: "Agents" },
   { id: "city", label: "Simulation" },
+  { id: "camera", label: "Camera" },
+  { id: "weather", label: "Weather" },
+  { id: "vehicles", label: "Vehicles" },
   { id: "settings", label: "Settings" },
+  { id: "system", label: "System" },
 ];
 
 export default function ControlPanel(): React.JSX.Element {
@@ -40,7 +55,11 @@ export default function ControlPanel(): React.JSX.Element {
       <div className="flex-1 overflow-y-auto">
         {activeTab === "agents" && <AgentTab />}
         {activeTab === "city" && <SimulationTab />}
+        {activeTab === "camera" && <CameraTab />}
+        {activeTab === "weather" && <WeatherTab />}
+        {activeTab === "vehicles" && <VehicleTab />}
         {activeTab === "settings" && <ApiSettingsTab />}
+        {activeTab === "system" && <SystemTab />}
       </div>
     </div>
   );

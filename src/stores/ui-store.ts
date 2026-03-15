@@ -1,6 +1,17 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-type ActiveTab = "agents" | "city" | "settings" | "logs";
+type ActiveTab =
+  | "agents"
+  | "city"
+  | "settings"
+  | "logs"
+  | "camera"
+  | "weather"
+  | "vehicles"
+  | "system";
+
+type CameraPreset = "top-down" | "isometric" | "street-level" | "custom";
 
 interface UIState {
   activeTab: ActiveTab;
@@ -9,37 +20,120 @@ interface UIState {
   showDebug: boolean;
   panelWidth: number;
 
+  // Camera settings
+  cameraPreset: CameraPreset;
+  followAgent: boolean;
+  orbitSpeed: number;
+  dampingFactor: number;
+  fov: number;
+  minZoom: number;
+  maxZoom: number;
+  debugOverlay: boolean;
+
   setActiveTab: (tab: ActiveTab) => void;
   toggleMinimap: () => void;
   toggleBubbles: () => void;
   toggleDebug: () => void;
   setPanelWidth: (width: number) => void;
+
+  // Camera setters
+  setCameraPreset: (preset: CameraPreset) => void;
+  setFollowAgent: (follow: boolean) => void;
+  setOrbitSpeed: (speed: number) => void;
+  setDampingFactor: (factor: number) => void;
+  setFov: (fov: number) => void;
+  setMinZoom: (min: number) => void;
+  setMaxZoom: (max: number) => void;
+  setDebugOverlay: (enabled: boolean) => void;
 }
 
-export const useUIStore = create<UIState>()((set) => ({
-  activeTab: "agents",
-  showMinimap: true,
-  showBubbles: true,
-  showDebug: false,
-  panelWidth: 360,
+export type { CameraPreset };
 
-  setActiveTab: (tab: ActiveTab): void => {
-    set({ activeTab: tab });
-  },
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      activeTab: "agents",
+      showMinimap: true,
+      showBubbles: true,
+      showDebug: false,
+      panelWidth: 360,
 
-  toggleMinimap: (): void => {
-    set((state) => ({ showMinimap: !state.showMinimap }));
-  },
+      // Camera defaults
+      cameraPreset: "custom",
+      followAgent: false,
+      orbitSpeed: 1.0,
+      dampingFactor: 0.1,
+      fov: 75,
+      minZoom: 10,
+      maxZoom: 500,
+      debugOverlay: false,
 
-  toggleBubbles: (): void => {
-    set((state) => ({ showBubbles: !state.showBubbles }));
-  },
+      setActiveTab: (tab: ActiveTab): void => {
+        set({ activeTab: tab });
+      },
 
-  toggleDebug: (): void => {
-    set((state) => ({ showDebug: !state.showDebug }));
-  },
+      toggleMinimap: (): void => {
+        set((state) => ({ showMinimap: !state.showMinimap }));
+      },
 
-  setPanelWidth: (width: number): void => {
-    set({ panelWidth: width });
-  },
-}));
+      toggleBubbles: (): void => {
+        set((state) => ({ showBubbles: !state.showBubbles }));
+      },
+
+      toggleDebug: (): void => {
+        set((state) => ({ showDebug: !state.showDebug }));
+      },
+
+      setPanelWidth: (width: number): void => {
+        set({ panelWidth: width });
+      },
+
+      setCameraPreset: (preset: CameraPreset): void => {
+        set({ cameraPreset: preset });
+      },
+
+      setFollowAgent: (follow: boolean): void => {
+        set({ followAgent: follow });
+      },
+
+      setOrbitSpeed: (speed: number): void => {
+        set({ orbitSpeed: speed });
+      },
+
+      setDampingFactor: (factor: number): void => {
+        set({ dampingFactor: factor });
+      },
+
+      setFov: (fov: number): void => {
+        set({ fov });
+      },
+
+      setMinZoom: (min: number): void => {
+        set({ minZoom: min });
+      },
+
+      setMaxZoom: (max: number): void => {
+        set({ maxZoom: max });
+      },
+
+      setDebugOverlay: (enabled: boolean): void => {
+        set({ debugOverlay: enabled });
+      },
+    }),
+    {
+      name: "mesasim-ui",
+      partialize: (state) => ({
+        cameraPreset: state.cameraPreset,
+        followAgent: state.followAgent,
+        orbitSpeed: state.orbitSpeed,
+        dampingFactor: state.dampingFactor,
+        fov: state.fov,
+        minZoom: state.minZoom,
+        maxZoom: state.maxZoom,
+        debugOverlay: state.debugOverlay,
+        showMinimap: state.showMinimap,
+        showBubbles: state.showBubbles,
+      }),
+    }
+  )
+);
