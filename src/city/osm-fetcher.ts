@@ -63,7 +63,9 @@ function buildOverpassQuery(bounds: BoundsRect): string {
   relation["building"](${bbox});
   way["highway"](${bbox});
   node["amenity"](${bbox});
+  node["shop"](${bbox});
   node["railway"="station"](${bbox});
+  node["railway"="subway_entrance"](${bbox});
 );
 out body geom;
 >;

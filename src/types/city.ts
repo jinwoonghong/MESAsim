@@ -1,3 +1,5 @@
+import type { POI } from "./poi";
+
 export type BuildingType =
   | "apartment"
   | "officetel"
@@ -50,6 +52,7 @@ export interface CityData {
   buildings: Building[];
   roadNodes: RoadNode[];
   roadSegments: RoadSegment[];
+  pois: POI[];
   bounds: {
     minLat: number;
     maxLat: number;

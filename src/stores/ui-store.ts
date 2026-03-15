@@ -18,6 +18,8 @@ interface UIState {
   showMinimap: boolean;
   showBubbles: boolean;
   showDebug: boolean;
+  showPOIs: boolean;
+  showLabels: boolean;
   panelWidth: number;
 
   // Camera settings
@@ -34,6 +36,8 @@ interface UIState {
   toggleMinimap: () => void;
   toggleBubbles: () => void;
   toggleDebug: () => void;
+  setShowPOIs: (show: boolean) => void;
+  setShowLabels: (show: boolean) => void;
   setPanelWidth: (width: number) => void;
 
   // Camera setters
@@ -56,6 +60,8 @@ export const useUIStore = create<UIState>()(
       showMinimap: true,
       showBubbles: true,
       showDebug: false,
+      showPOIs: true,
+      showLabels: true,
       panelWidth: 360,
 
       // Camera defaults
@@ -82,6 +88,14 @@ export const useUIStore = create<UIState>()(
 
       toggleDebug: (): void => {
         set((state) => ({ showDebug: !state.showDebug }));
+      },
+
+      setShowPOIs: (show: boolean): void => {
+        set({ showPOIs: show });
+      },
+
+      setShowLabels: (show: boolean): void => {
+        set({ showLabels: show });
       },
 
       setPanelWidth: (width: number): void => {
@@ -133,6 +147,8 @@ export const useUIStore = create<UIState>()(
         debugOverlay: state.debugOverlay,
         showMinimap: state.showMinimap,
         showBubbles: state.showBubbles,
+        showPOIs: state.showPOIs,
+        showLabels: state.showLabels,
       }),
     }
   )

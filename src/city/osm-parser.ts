@@ -8,6 +8,7 @@ import type { OSMElement, OSMNode, OSMResponse, OSMWay } from "./osm-fetcher";
 import { wgs84ToLocal } from "@/lib/math";
 import { classifyBuilding, getBuildingColor, getDefaultHeight } from "./building-types";
 import { MAX_BUILDINGS, MAX_ROAD_NODES, HEIGHT_PER_LEVEL } from "./city-config";
+import { parsePOIs } from "./poi-parser";
 
 // Road type mapping from OSM highway values to our RoadSegment types
 type RoadType = RoadSegment["type"];
@@ -306,10 +307,17 @@ export function parseOSMResponse(
   const buildings = parseBuildings(osmData.elements, center);
   const { roadNodes, roadSegments } = parseRoads(osmData.elements, center);
 
+  const transformCoord = (lat: number, lon: number): { x: number; y: number } => {
+    const local = wgs84ToLocal(lat, lon, center.lat, center.lon);
+    return { x: local.x, y: local.z };
+  };
+  const pois = parsePOIs(osmData.elements, transformCoord);
+
   return {
     buildings,
     roadNodes,
     roadSegments,
+    pois,
     bounds: {
       minLat: bounds.south,
       maxLat: bounds.north,
