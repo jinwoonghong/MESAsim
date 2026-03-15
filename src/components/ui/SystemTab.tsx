@@ -34,6 +34,10 @@ export default function SystemTab(): React.JSX.Element {
   const time = useSimulationStore((s) => s.time);
   const debugOverlay = useUIStore((s) => s.debugOverlay);
   const setDebugOverlay = useUIStore((s) => s.setDebugOverlay);
+  const showPOIs = useUIStore((s) => s.showPOIs);
+  const setShowPOIs = useUIStore((s) => s.setShowPOIs);
+  const showLabels = useUIStore((s) => s.showLabels);
+  const setShowLabels = useUIStore((s) => s.setShowLabels);
 
   const [fps, setFps] = useState(0);
   const [memoryUsage, setMemoryUsage] = useState<string>("N/A");
@@ -94,6 +98,8 @@ export default function SystemTab(): React.JSX.Element {
       debugOverlay: false,
       showMinimap: true,
       showBubbles: true,
+      showPOIs: true,
+      showLabels: true,
     });
 
     useSimulationStore.setState({
@@ -175,6 +181,31 @@ export default function SystemTab(): React.JSX.Element {
             className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
           />
           Debug Overlay
+        </label>
+      </section>
+
+      {/* Map Layers */}
+      <section className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
+          Map Layers
+        </h3>
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={showPOIs}
+            onChange={(e) => setShowPOIs(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
+          />
+          Show POI Markers
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={showLabels}
+            onChange={(e) => setShowLabels(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
+          />
+          Show Building Labels
         </label>
       </section>
 

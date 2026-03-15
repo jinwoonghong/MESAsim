@@ -10,6 +10,10 @@ export type { OSMNode, OSMWay, OSMRelation, OSMElement, OSMResponse } from "./os
 
 export { parseOSMResponse, parseBuildings, parseRoads } from "./osm-parser";
 
+export { classifyPOI, parsePOIs } from "./poi-parser";
+
+export { searchNominatim, nominatimResultToBounds } from "./nominatim";
+
 export {
   classifyBuilding,
   getBuildingColor,
