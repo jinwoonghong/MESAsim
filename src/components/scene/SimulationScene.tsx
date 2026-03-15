@@ -6,6 +6,12 @@ import CityRenderer from "./CityRenderer";
 import AgentRenderer from "./AgentRenderer";
 import Lighting from "./Lighting";
 import CameraController from "./CameraController";
+import WeatherEffects from "./WeatherEffects";
+import POIMarkers from "./POIMarkers";
+import CityLabels from "./CityLabels";
+import VehicleRenderer from "./VehicleRenderer";
+import ConversationOverlay from "../overlay/ConversationOverlay";
+import { useSimulationStore } from "@/stores";
 
 function GroundPlane(): React.JSX.Element {
   return (
@@ -17,6 +23,8 @@ function GroundPlane(): React.JSX.Element {
 }
 
 function SceneContent(): React.JSX.Element {
+  const vehiclesEnabled = useSimulationStore((s) => s.config.vehiclesEnabled);
+
   return (
     <>
       <Lighting />
@@ -24,6 +32,11 @@ function SceneContent(): React.JSX.Element {
       <GroundPlane />
       <CityRenderer />
       <AgentRenderer />
+      {vehiclesEnabled && <VehicleRenderer />}
+      <WeatherEffects />
+      <POIMarkers />
+      <CityLabels />
+      <ConversationOverlay />
     </>
   );
 }

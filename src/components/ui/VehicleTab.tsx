@@ -3,16 +3,16 @@
 import { useSimulationStore } from "@/stores";
 
 export default function VehicleTab(): React.JSX.Element {
-  const config = useSimulationStore((s) => s.config);
+  const vehiclesEnabled = useSimulationStore((s) => s.config.vehiclesEnabled);
   const maxVehicleCount = useSimulationStore((s) => s.maxVehicleCount);
   const vehicleTypes = useSimulationStore((s) => s.vehicleTypes);
   const spawnRate = useSimulationStore((s) => s.spawnRate);
+  const vehicleCount = useSimulationStore((s) => s.vehicles.length);
 
   const setMaxVehicleCount = useSimulationStore((s) => s.setMaxVehicleCount);
   const setVehicleTypes = useSimulationStore((s) => s.setVehicleTypes);
   const setSpawnRate = useSimulationStore((s) => s.setSpawnRate);
-
-  const vehiclesEnabled = config.vehiclesEnabled;
+  const setVehiclesEnabled = useSimulationStore((s) => s.setVehiclesEnabled);
 
   function handleToggleVehicleType(type: "car" | "bus" | "taxi"): void {
     setVehicleTypes({
@@ -23,12 +23,6 @@ export default function VehicleTab(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* Pending notice */}
-      <div className="rounded bg-amber-900/30 border border-amber-700/50 px-3 py-2 text-xs text-amber-400">
-        Vehicle system is under development. Settings will be saved and applied when
-        implemented.
-      </div>
-
       {/* Enable Vehicles */}
       <section className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-300">
@@ -38,12 +32,16 @@ export default function VehicleTab(): React.JSX.Element {
           <input
             type="checkbox"
             checked={vehiclesEnabled}
-            readOnly
-            disabled
-            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            onChange={(e) => setVehiclesEnabled(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
           />
-          Enable Vehicles (coming soon)
+          Enable Vehicles
         </label>
+        {vehiclesEnabled && (
+          <span className="text-xs text-gray-500">
+            Active: {vehicleCount} / {maxVehicleCount}
+          </span>
+        )}
       </section>
 
       {/* Max Vehicle Count */}

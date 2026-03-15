@@ -7,6 +7,7 @@ import type {
   SpeedMultiplier,
   WeatherState,
   TimeOfDay,
+  Vehicle,
 } from "@/types/simulation";
 
 function getTimeOfDay(hour: number): TimeOfDay {
@@ -38,6 +39,9 @@ interface SimulationState {
   vehicleTypes: VehicleTypes;
   spawnRate: number;
 
+  // Vehicle runtime state (not persisted)
+  vehicles: Vehicle[];
+
   start: () => void;
   pause: () => void;
   reset: () => void;
@@ -53,6 +57,13 @@ interface SimulationState {
   setVehicleTypes: (types: VehicleTypes) => void;
   setSpawnRate: (rate: number) => void;
   setDayDuration: (ms: number) => void;
+
+  // Vehicle mutations
+  addVehicle: (vehicle: Vehicle) => void;
+  removeVehicle: (id: string) => void;
+  updateVehicles: (vehicles: Vehicle[]) => void;
+  clearVehicles: () => void;
+  setVehiclesEnabled: (enabled: boolean) => void;
 }
 
 const DEFAULT_CONFIG: SimulationConfig = {
@@ -90,6 +101,9 @@ export const useSimulationStore = create<SimulationState>()(
       maxVehicleCount: 10,
       vehicleTypes: { car: true, bus: true, taxi: true },
       spawnRate: 5,
+
+      // Vehicle runtime state
+      vehicles: [],
 
       start: (): void => {
         set({ status: "running" });
@@ -179,6 +193,36 @@ export const useSimulationStore = create<SimulationState>()(
         set((state) => ({
           config: { ...state.config, dayDurationMs: ms },
         }));
+      },
+
+      addVehicle: (vehicle: Vehicle): void => {
+        set((state) => ({ vehicles: [...state.vehicles, vehicle] }));
+      },
+
+      removeVehicle: (id: string): void => {
+        set((state) => ({
+          vehicles: state.vehicles.filter((v) => v.id !== id),
+        }));
+      },
+
+      updateVehicles: (vehicles: Vehicle[]): void => {
+        set({ vehicles });
+      },
+
+      clearVehicles: (): void => {
+        set({ vehicles: [] });
+      },
+
+      setVehiclesEnabled: (enabled: boolean): void => {
+        set((state) => {
+          const nextState: Partial<SimulationState> = {
+            config: { ...state.config, vehiclesEnabled: enabled },
+          };
+          if (!enabled) {
+            nextState.vehicles = [];
+          }
+          return nextState;
+        });
       },
     }),
     {
