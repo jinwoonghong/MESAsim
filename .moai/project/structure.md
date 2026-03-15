@@ -32,8 +32,11 @@ src/
 │   └── storage.ts        - IndexedDB persistence for agent state
 │
 ├── city/                 - City domain (geographic data and rendering data)
-│   ├── osmFetcher.ts     - OpenStreetMap Overpass API client
-│   ├── osmParser.ts      - Raw OSM data to internal city model parser
+│   ├── index.ts          - Barrel exports for city module
+│   ├── osm-fetcher.ts    - OpenStreetMap Overpass API client (includes subway_entrance queries)
+│   ├── osm-parser.ts     - Raw OSM data to internal city model parser (includes POI integration)
+│   ├── nominatim.ts      - Nominatim geocoding API client with 1req/sec rate limiting
+│   ├── poi-parser.ts     - POI extraction and classification from OSM data (7 categories)
 │   ├── buildingTypes.ts  - Building classification and metadata
 │   ├── roadNetwork.ts    - Road graph construction for pathfinding
 │   └── koreanRegions.ts  - Predefined bounding boxes for 8 Korean regions
@@ -44,13 +47,22 @@ src/
 │   │   ├── CityRenderer.tsx     - Buildings, roads, ground plane rendering
 │   │   ├── AgentRenderer.tsx    - Agent mesh instances and labels
 │   │   ├── Lighting.tsx         - Day/night cycle directional and ambient light
-│   │   └── Camera.tsx           - Orbit camera controls and positioning
+│   │   ├── Camera.tsx           - Orbit camera controls and positioning
+│   │   ├── CityLabels.tsx         - Korean hangul labels with LOD visibility (200-unit threshold)
+│   │   ├── POIMarkers.tsx         - Category-colored POI markers (subway = gold diamond)
+│   │   └── WeatherEffects.tsx     - Rain, snow, fog particle effects
+│   │
+│   ├── overlay/           - 2D overlay components
+│   │   ├── Minimap.tsx            - 200x200 canvas minimap with building footprints
+│   │   ├── AgentBubble.tsx        - 3D conversation bubbles with LOD culling
+│   │   └── ConversationOverlay.tsx - Active conversation management
 │   │
 │   └── ui/               - 2D control panel overlay
 │       ├── ControlPanel.tsx     - Tabbed panel container
 │       ├── SimulationTab.tsx    - Play/pause, speed, time, weather controls
 │       ├── AgentTab.tsx         - Agent list, selection, detail inspector
-│       └── ApiSettingsTab.tsx   - Gemini API key and model configuration
+│       ├── ApiSettingsTab.tsx   - Gemini API key and model configuration
+│       └── SearchInput.tsx        - Nominatim geocoding search with dropdown results
 │
 ├── lib/                  - Shared utilities
 │   ├── utils.ts          - cn() helper (clsx + tailwind-merge)
@@ -70,16 +82,20 @@ src/
 │   ├── agentStore.ts       - Agents Map, selectedAgentId, spatial queries
 │   ├── cityStore.ts        - CityData, loading state, selectedRegion
 │   ├── uiStore.ts          - activeTab, showMinimap, showBubbles, showDebug
-│   └── settingsStore.ts    - geminiApiKey, geminiModel, autoSave (persisted)
+│   ├── settingsStore.ts    - geminiApiKey, geminiModel, autoSave (persisted)
+│   └── conversationStore.ts - Active conversation tracking for overlay bubbles
 │
 ├── systems/              - Algorithmic systems
-│   └── pathfinding.ts    - A* search on road graph with binary min-heap
+│   ├── pathfinding.ts    - A* search on road graph with binary min-heap
+│   ├── weather.ts        - Weather state machine (clear/cloudy/rain/snow/fog)
+│   └── vehicles.ts       - Vehicle spawning, movement, and lifecycle
 │
 └── types/                - TypeScript type definitions
     ├── agent.ts          - Agent, Personality (OCEAN), AgentMemory, AgentAction
     ├── city.ts           - CityData, Building, Road, Region
     ├── simulation.ts     - SimulationConfig, TimeOfDay, Weather
-    └── gemini.ts         - Gemini request/response types, prompt parameters
+    ├── gemini.ts         - Gemini request/response types, prompt parameters
+    └── poi.ts            - POI, NominatimResult, POICategory types
 ```
 
 ## Key File Locations

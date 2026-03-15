@@ -25,6 +25,12 @@ MESAsim is a 3D autonomous agent simulation platform that renders Korean citysca
 6. **Agent Memory and Interaction** - Agents remember past events and hold conversations with nearby agents.
 7. **IndexedDB Persistence** - Agent state is persisted to the browser via IndexedDB, allowing sessions to survive page reloads.
 8. **Real-Time Simulation Controls** - Users can adjust simulation speed, pause, reset, and inspect individual agents through a control panel.
+9. **POI Markers** - Points of Interest rendered as colored 3D markers with category-based colors (restaurants, cafes, shops, schools, hospitals, parks, subway entrances).
+10. **Korean Hangul Labels** - Building name labels with LOD-based visibility (hidden beyond 200 units), Korean font support.
+11. **Geocoding Search** - Nominatim API integration for searching any Korean location, with OSM data auto-loading.
+12. **Information Overlay** - 2D minimap with building footprints and agent dots, agent conversation bubbles in 3D space.
+13. **Weather Effects** - Visual weather system with rain, snow, and fog particle effects.
+14. **Vehicle System** - Cars and buses spawning on roads with physics-based movement and rendering.
 
 ## Use Cases
 
@@ -36,7 +42,7 @@ MESAsim is a 3D autonomous agent simulation platform that renders Korean citysca
 ## Current Status
 
 - **Stage**: Active development (pre-release)
-- **Codebase Size**: 2,774 lines of code across 51 TypeScript/TSX files
-- **Test Framework**: Vitest 2 + Testing Library (configured, coverage TBD)
+- **Codebase Size**: ~5,000+ lines of code
+- **Test Framework**: Vitest 2 with 91 tests passing
 - **Build System**: Next.js 15 with Turbopack
 - **Package Manager**: pnpm 9.15.0

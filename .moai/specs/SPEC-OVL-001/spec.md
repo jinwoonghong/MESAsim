@@ -2,7 +2,7 @@
 id: SPEC-OVL-001
 title: "Information Overlay - Minimap and Conversation Bubbles"
 version: 0.1.0
-status: draft
+status: completed
 created: 2026-03-15
 updated: 2026-03-15
 author: MoAI

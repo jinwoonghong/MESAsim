@@ -2,7 +2,7 @@
 id: SPEC-KOR-001
 title: "Korean Urban Features - POI, Subway, Hangul Labels, Geocoding"
 version: 0.1.0
-status: draft
+status: completed
 created: 2026-03-15
 updated: 2026-03-15
 author: MoAI

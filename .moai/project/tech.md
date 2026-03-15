@@ -87,3 +87,10 @@ The client-side SDK calls a server-side proxy at `POST /api/ai` which handles ra
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Yes (server) | Gemini API key used by the `/api/ai` route. Can alternatively be set client-side via the API Settings tab and stored in localStorage. |
 
 No other environment variables are required for basic operation. The Gemini API key can be provided either as a server environment variable or entered by the user at runtime through the settings UI.
+
+## External APIs
+
+| API | Purpose | Rate Limit |
+|---|---|---|
+| Nominatim | Geocoding - convert location names to coordinates for map navigation | 1 request/second (OSM usage policy) |
+| Overpass API | OSM data fetching - buildings, roads, POIs, and subway entrances for city rendering | Best-effort (no hard limit, but large queries throttled) |
