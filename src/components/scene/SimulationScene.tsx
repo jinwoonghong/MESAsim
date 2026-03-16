@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import CityRenderer from "./CityRenderer";
 import AgentRenderer from "./AgentRenderer";
@@ -12,6 +12,7 @@ import CityLabels from "./CityLabels";
 import VehicleRenderer from "./VehicleRenderer";
 import ConversationOverlay from "../overlay/ConversationOverlay";
 import { useSimulationStore } from "@/stores";
+import { simulationEngine } from "@/simulation/engine";
 
 function GroundPlane(): React.JSX.Element {
   return (
@@ -42,6 +43,23 @@ function SceneContent(): React.JSX.Element {
 }
 
 export default function SimulationScene(): React.JSX.Element {
+  const status = useSimulationStore((s) => s.status);
+  const engineStarted = useRef(false);
+
+  useEffect(() => {
+    if (status === "running" && !engineStarted.current) {
+      simulationEngine.start();
+      engineStarted.current = true;
+    } else if (status === "idle") {
+      simulationEngine.stop();
+      engineStarted.current = false;
+    }
+    return () => {
+      simulationEngine.stop();
+      engineStarted.current = false;
+    };
+  }, [status]);
+
   return (
     <div className="h-full w-full">
       <Canvas

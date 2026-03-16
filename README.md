@@ -34,7 +34,7 @@ A 3D autonomous agent simulation platform that renders Korean cityscapes from re
 | Framework | Next.js (App Router) | 15 |
 | UI Library | React | 19 |
 | Language | TypeScript (strict mode) | 5.7+ |
-| 3D Rendering | React Three Fiber + Three.js | R3F 8 / Three 0.171 |
+| 3D Rendering | React Three Fiber + Three.js | R3F 9 / Three 0.171 |
 | 3D Helpers | @react-three/drei | 9 |
 | State Management | Zustand | 5 |
 | AI | Google Gemini API | 0.24 |
@@ -43,6 +43,7 @@ A 3D autonomous agent simulation platform that renders Korean cityscapes from re
 | Storage | IndexedDB (idb) | 8 |
 | Testing | Vitest | 2 |
 | Linting | ESLint | 9 |
+| Dev Server | Turbopack | built-in |
 
 ### External APIs
 
@@ -51,6 +52,158 @@ A 3D autonomous agent simulation platform that renders Korean cityscapes from re
 | Nominatim | Geocoding (location name to coordinates) | 1 req/sec |
 | Overpass API | OSM data (buildings, roads, POIs, subway entrances) | Best-effort |
 | Google Gemini | Agent AI (generation, decisions, conversations) | Per API key |
+
+---
+
+## Architecture
+
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Browser                                                        │
+│                                                                 │
+│  ┌──────────────┐   ┌──────────────┐   ┌─────────────────────┐ │
+│  │ React UI     │   │ R3F Canvas   │   │ Simulation Engine   │ │
+│  │ (Control     │   │ (3D Scene)   │   │ (rAF Game Loop)     │ │
+│  │  Panel)      │   │              │   │                     │ │
+│  └──────┬───────┘   └──────┬───────┘   └──────────┬──────────┘ │
+│         │                  │                       │            │
+│         └──────────┬───────┴───────────────────────┘            │
+│                    ▼                                            │
+│         ┌─────────────────────┐                                 │
+│         │   Zustand Stores    │                                 │
+│         │  (Single Source of  │                                 │
+│         │      Truth)         │                                 │
+│         └─────────┬───────────┘                                 │
+│                   │                                             │
+│    ┌──────────────┼──────────────┐                              │
+│    ▼              ▼              ▼                              │
+│  ┌──────┐  ┌───────────┐  ┌──────────┐                         │
+│  │ IDB  │  │ /api/ai   │  │ OSM APIs │                         │
+│  │      │  │ (Gemini   │  │ Overpass │                         │
+│  │      │  │  Proxy)   │  │ Nominatim│                         │
+│  └──────┘  └─────┬─────┘  └──────────┘                         │
+└──────────────────┼──────────────────────────────────────────────┘
+                   ▼
+            Google Gemini API
+```
+
+### Data Flow
+
+1. **City Loading**: User selects region → Nominatim geocoding → Overpass API fetch → `osm-parser` transforms raw OSM XML into `CityData` (buildings, roads, POIs) → stored in `city-store`
+2. **Simulation Loop**: `SimulationEngine` runs a decoupled `requestAnimationFrame` loop independent of the React render cycle. Each tick processes: weather → time advance → AI decisions → agent movement → vehicle spawning → interactions → nighttime behavior
+3. **AI Decisions**: Agents in `idle` state trigger async Gemini API calls (fire-and-forget, non-blocking). Responses drive `move`, `interact`, `go_home`, or `idle` actions. Falls back to random building navigation when API is unavailable.
+4. **Rendering**: React Three Fiber reads from Zustand stores each frame. R3F components (`CityRenderer`, `AgentRenderer`, `POIMarkers`, etc.) react to state changes and re-render the 3D scene.
+
+### Simulation Engine
+
+The core engine (`src/simulation/engine.ts`) is a singleton class running outside the React lifecycle:
+
+```
+SimulationEngine.start()
+  ├── initializePopulation()     # Spawn 5 default agents on road nodes
+  └── requestAnimationFrame loop
+        └── tick() (every tickInterval ms)
+              ├── processWeather()        # Weather state machine transitions
+              ├── simStore.tick()          # Advance simulation clock
+              ├── processDecisions()      # AI decision-making (async, non-blocking)
+              ├── processMovement()       # Move agents along A* paths
+              ├── processVehicles()       # Spawn/move/despawn vehicles
+              ├── processInteractions()   # Proximity-based agent conversations
+              └── processHomeDirection()  # Night/storm behavior
+```
+
+- **Decoupled from React**: Reads/writes Zustand stores directly via `getState()`, no re-renders triggered per tick
+- **Non-blocking AI**: Gemini API calls are fire-and-forget promises; the game loop never awaits them
+- **Weather-aware**: Movement speed modified by weather (clear=1.0, rain=0.7, storm=0.4)
+
+### Agent Lifecycle
+
+```
+┌─────────┐   Gemini API    ┌─────────┐   A* Path    ┌─────────┐
+│  IDLE   │ ──────────────→ │ DECIDE  │ ───────────→ │ MOVING  │
+│         │   or fallback   │         │              │         │
+└────┬────┘                 └─────────┘              └────┬────┘
+     │                                                    │
+     │  proximity                              reached    │
+     │  trigger                               destination │
+     ▼                                                    ▼
+┌─────────────┐   conversation end          ┌─────────────────┐
+│ INTERACTING │ ──────────────────────────→ │      IDLE       │
+│ (Gemini     │   memory + relationship     └────────┬────────┘
+│  dialogue)  │   updated                            │
+└─────────────┘                              night   │
+                                            (22-06h) │
+                                                     ▼
+                                              ┌────────────┐
+                                              │  SLEEPING  │
+                                              │ (at home)  │
+                                              └────────────┘
+```
+
+- **Personality**: Big Five OCEAN traits (openness, conscientiousness, extraversion, agreeableness, neuroticism) influence AI decisions
+- **Memory**: Each interaction is recorded with summary, participants, and timestamp
+- **Relationships**: Strength value tracked per agent pair, updated after each conversation
+- **Daily Routine**: Occupation-based schedule templates (8 occupations with time-activity pairs)
+
+### Pathfinding
+
+A* search on the OSM road graph with a binary min-heap priority queue:
+
+1. `buildRoadGraph()` converts OSM road nodes/segments into a bidirectional adjacency graph
+2. `findPath()` runs A* from the nearest road node to the source position to the nearest road node to the destination
+3. Returns a sequence of 2D waypoints converted to 3D coordinates for agent movement
+4. Agents follow waypoints each tick with configurable speed and weather-based modifiers
+
+### State Management
+
+Six Zustand stores act as the single source of truth:
+
+| Store | Responsibility |
+|-------|---------------|
+| `simulation-store` | Engine status, clock, weather, speed, vehicles, config |
+| `agent-store` | Agent entities (Map), spatial queries, CRUD operations |
+| `city-store` | CityData (buildings, roads, POIs), loading state, selected region |
+| `ui-store` | Active tab, overlay toggles (POIs, labels, minimap, bubbles) |
+| `settings-store` | Gemini API key, model selection (persisted to localStorage) |
+| `conversation-store` | Active conversation tracking for overlay speech bubbles |
+
+### Rendering Pipeline
+
+```
+Next.js Page (SSR disabled for 3D)
+  └── SimulationScene (dynamic import, ssr: false)
+        └── R3F <Canvas>
+              ├── Lighting          # Directional + ambient, day/night color
+              ├── CameraController  # OrbitControls wrapper
+              ├── GroundPlane       # 1000x1000 dark plane
+              ├── CityRenderer      # Instanced buildings + roads from CityData
+              ├── AgentRenderer     # Agent mesh instances with name labels
+              ├── VehicleRenderer   # Cars/buses on road paths
+              ├── WeatherEffects    # Particle systems (rain/snow/fog)
+              ├── POIMarkers        # Category-colored spheres + subway diamonds
+              ├── CityLabels        # drei Html labels with LOD culling (200 units)
+              └── ConversationOverlay  # drei Html speech bubbles (150 units)
+```
+
+- **LOD System**: Labels and bubbles use `useFrame` to check camera distance each frame, toggling `group.visible` without React re-renders
+- **Dynamic Import**: `SimulationScene` is loaded with `next/dynamic` (`ssr: false`) to avoid Three.js SSR issues
+- **Instanced Rendering**: Buildings use instanced meshes for performance with large city datasets
+
+### API Proxy
+
+The `/api/ai` route acts as a server-side proxy to Google Gemini:
+
+- **Rate Limiting**: 30 requests per 60 seconds per client IP (in-memory Map)
+- **Validation**: Zod schema validates request type (`generate_agent`, `decide_action`, `conversation`) and context
+- **Security**: API key stays server-side, never exposed to the browser
+- **Three AI modes**:
+  - `generate_agent`: Creates agent profiles with personality, occupation, backstory
+  - `decide_action`: Returns `move`/`interact`/`go_home`/`idle` decisions based on agent state and surroundings
+  - `conversation`: Generates dialogue between two agents with mood and summary
+
+---
 
 ## Getting Started
 

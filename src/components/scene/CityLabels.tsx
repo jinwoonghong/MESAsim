@@ -11,6 +11,7 @@ import * as THREE from "three";
 const MAX_LABELS = 50;
 const LABEL_OFFSET_Y = 2;
 const LOD_DISTANCE_THRESHOLD = 200;
+const EMPTY_BUILDINGS: Building[] = [];
 
 /** Extract a display name from a building, preferring name field then OSM tags. */
 function getBuildingLabel(building: Building): string | null {
@@ -86,7 +87,7 @@ function LabelWithLOD({
 }
 
 export default function CityLabels(): React.JSX.Element | null {
-  const buildings = useCityStore((s) => s.cityData?.buildings ?? []);
+  const buildings = useCityStore((s) => s.cityData?.buildings ?? EMPTY_BUILDINGS);
   const showLabels = useUIStore((s) => s.showLabels);
 
   const labeledBuildings = useMemo(() => {

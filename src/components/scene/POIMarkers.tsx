@@ -20,9 +20,10 @@ const MAX_MARKERS = 200;
 const MARKER_RADIUS = 0.6;
 const SUBWAY_SCALE = 1.5;
 const ELEVATION = 2;
+const EMPTY_POIS: never[] = [];
 
 export default function POIMarkers(): React.JSX.Element | null {
-  const pois = useCityStore((s) => s.cityData?.pois ?? []);
+  const pois = useCityStore((s) => s.cityData?.pois ?? EMPTY_POIS);
   const showPOIs = useUIStore((s) => s.showPOIs);
 
   const visiblePOIs = useMemo(() => pois.slice(0, MAX_MARKERS), [pois]);
