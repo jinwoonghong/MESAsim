@@ -13,6 +13,12 @@ type ActiveTab =
 
 type CameraPreset = "top-down" | "isometric" | "street-level" | "custom";
 
+interface CameraTarget {
+  x: number;
+  y: number;
+  z: number;
+}
+
 interface UIState {
   activeTab: ActiveTab;
   showMinimap: boolean;
@@ -31,6 +37,7 @@ interface UIState {
   minZoom: number;
   maxZoom: number;
   debugOverlay: boolean;
+  cameraTarget: CameraTarget | null;
 
   setActiveTab: (tab: ActiveTab) => void;
   toggleMinimap: () => void;
@@ -49,6 +56,7 @@ interface UIState {
   setMinZoom: (min: number) => void;
   setMaxZoom: (max: number) => void;
   setDebugOverlay: (enabled: boolean) => void;
+  setCameraTarget: (target: CameraTarget | null) => void;
 }
 
 export type { CameraPreset };
@@ -73,6 +81,7 @@ export const useUIStore = create<UIState>()(
       minZoom: 10,
       maxZoom: 500,
       debugOverlay: false,
+      cameraTarget: null,
 
       setActiveTab: (tab: ActiveTab): void => {
         set({ activeTab: tab });
@@ -132,6 +141,10 @@ export const useUIStore = create<UIState>()(
 
       setDebugOverlay: (enabled: boolean): void => {
         set({ debugOverlay: enabled });
+      },
+
+      setCameraTarget: (target: CameraTarget | null): void => {
+        set({ cameraTarget: target });
       },
     }),
     {

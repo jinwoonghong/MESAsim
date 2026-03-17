@@ -19,6 +19,7 @@ export default function SimulationTab(): React.JSX.Element {
   const pause = useSimulationStore((s) => s.pause);
   const reset = useSimulationStore((s) => s.reset);
   const setSpeed = useSimulationStore((s) => s.setSpeed);
+  const setMaxAgents = useSimulationStore((s) => s.setMaxAgents);
 
   const selectedRegion = useCityStore((s) => s.selectedRegion);
   const setSelectedRegion = useCityStore((s) => s.setSelectedRegion);
@@ -145,6 +146,33 @@ export default function SimulationTab(): React.JSX.Element {
             Reset
           </button>
         </div>
+      </section>
+
+      {/* Agent Count */}
+      <section className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-gray-400">Agents</span>
+          <span className="text-xs font-mono text-gray-500">{config.maxAgents}</span>
+        </div>
+        <input
+          type="range"
+          min={1}
+          max={50}
+          value={config.maxAgents}
+          onChange={(e) => setMaxAgents(Number(e.target.value))}
+          disabled={status !== "idle"}
+          className="w-full accent-blue-500 disabled:opacity-50"
+        />
+        <div className="flex justify-between text-[10px] text-gray-600">
+          <span>1</span>
+          <span>25</span>
+          <span>50</span>
+        </div>
+        {status !== "idle" && (
+          <p className="text-[10px] text-gray-600">
+            Reset to change agent count
+          </p>
+        )}
       </section>
 
       {/* Speed */}

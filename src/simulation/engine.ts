@@ -53,7 +53,7 @@ class SimulationEngine {
     }
   }
 
-  // @MX:NOTE: Auto-populates 5 default agents when simulation starts with empty agent store.
+  // @MX:NOTE: Auto-populates agents based on config.maxAgents when simulation starts with empty agent store.
   // Agents are placed at random road node positions and assigned residential homes.
   private initializePopulation(): void {
     const agentStore = useAgentStore.getState();
@@ -70,9 +70,10 @@ class SimulationEngine {
       this.roadGraph = buildRoadGraph(roadNodes, roadSegments);
     }
 
-    const defaultCount = 5;
+    const simStore = useSimulationStore.getState();
+    const agentCount = simStore.config.maxAgents;
 
-    for (let i = 0; i < defaultCount; i++) {
+    for (let i = 0; i < agentCount; i++) {
       let agent = generateDefaultAgent(i);
 
       // Assign home building from available residential buildings

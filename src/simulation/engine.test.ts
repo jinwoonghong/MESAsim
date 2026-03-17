@@ -5,7 +5,7 @@ vi.mock("@/stores/simulation-store", () => {
   const store = {
     status: "running" as string,
     config: {
-      maxAgents: 25,
+      maxAgents: 5,
       tickInterval: 16,
       speedMultiplier: 1,
       agentInteractionRange: 5,

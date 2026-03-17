@@ -26,6 +26,9 @@ export default function CameraController(): React.JSX.Element {
   const minZoom = useUIStore((s) => s.minZoom);
   const maxZoom = useUIStore((s) => s.maxZoom);
 
+  const cameraTarget = useUIStore((s) => s.cameraTarget);
+  const setCameraTarget = useUIStore((s) => s.setCameraTarget);
+
   const { camera } = useThree();
   const targetPosition = useRef(new THREE.Vector3(0, 0, 0));
   const previousPreset = useRef(cameraPreset);
@@ -74,6 +77,43 @@ export default function CameraController(): React.JSX.Element {
 
     requestAnimationFrame(animate);
   }, [cameraPreset, camera]);
+
+  // Animate camera to selected agent position (one-shot)
+  useEffect(() => {
+    if (!cameraTarget || !controlsRef.current) return;
+
+    const endTarget = new THREE.Vector3(cameraTarget.x, cameraTarget.y, cameraTarget.z);
+    const controls = controlsRef.current;
+    const startTarget = (controls.target as THREE.Vector3).clone();
+    const startPos = camera.position.clone();
+
+    // Compute end position: offset from target maintaining current camera distance and angle
+    const offset = startPos.clone().sub(startTarget);
+    const distance = Math.min(offset.length(), 80);
+    offset.normalize().multiplyScalar(distance);
+    const endPos = endTarget.clone().add(offset);
+
+    const startTime = performance.now();
+    const duration = 600;
+
+    function animateToAgent(): void {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+
+      camera.position.lerpVectors(startPos, endPos, eased);
+      const currentTarget = controls.target as THREE.Vector3;
+      currentTarget.lerpVectors(startTarget, endTarget, eased);
+      controls.update();
+
+      if (t < 1) {
+        requestAnimationFrame(animateToAgent);
+      }
+    }
+
+    requestAnimationFrame(animateToAgent);
+    setCameraTarget(null);
+  }, [cameraTarget, camera, setCameraTarget]);
 
   // Follow agent logic
   const shouldFollow = useMemo(

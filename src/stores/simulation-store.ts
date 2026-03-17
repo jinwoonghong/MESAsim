@@ -64,6 +64,7 @@ interface SimulationState {
   updateVehicles: (vehicles: Vehicle[]) => void;
   clearVehicles: () => void;
   setVehiclesEnabled: (enabled: boolean) => void;
+  setMaxAgents: (count: number) => void;
 }
 
 const DEFAULT_CONFIG: SimulationConfig = {
@@ -211,6 +212,12 @@ export const useSimulationStore = create<SimulationState>()(
 
       clearVehicles: (): void => {
         set({ vehicles: [] });
+      },
+
+      setMaxAgents: (count: number): void => {
+        set((state) => ({
+          config: { ...state.config, maxAgents: count },
+        }));
       },
 
       setVehiclesEnabled: (enabled: boolean): void => {

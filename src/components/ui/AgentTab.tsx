@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useAgentStore } from "@/stores";
+import { useUIStore } from "@/stores/ui-store";
 import type { Agent, AgentState } from "@/types";
 
 const STATE_COLORS: Record<AgentState, string> = {
@@ -153,10 +154,24 @@ export default function AgentTab(): React.JSX.Element {
   const selectedAgentId = useAgentStore((s) => s.selectedAgentId);
   const selectAgent = useAgentStore((s) => s.selectAgent);
 
+  const setCameraTarget = useUIStore((s) => s.setCameraTarget);
+
   const agentList = useMemo(() => Array.from(agents.values()), [agents]);
   const selectedAgent = selectedAgentId
     ? agents.get(selectedAgentId)
     : undefined;
+
+  const handleSelectAgent = useCallback(
+    (agent: Agent) => {
+      selectAgent(agent.id);
+      setCameraTarget({
+        x: agent.position.x,
+        y: agent.position.y,
+        z: agent.position.z,
+      });
+    },
+    [selectAgent, setCameraTarget],
+  );
 
   // Empty state when no agents exist
   if (agentList.length === 0) {
@@ -199,7 +214,7 @@ export default function AgentTab(): React.JSX.Element {
             key={agent.id}
             agent={agent}
             isSelected={agent.id === selectedAgentId}
-            onSelect={() => selectAgent(agent.id)}
+            onSelect={() => handleSelectAgent(agent)}
           />
         ))}
       </div>
